@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Korea AI Trip Planner - Smart Travel with Carbon Rewards</title>
+    
+    <!-- Mapbox GL JS -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.1.2/mapbox-gl.css' rel='stylesheet' />
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Left Side: 3D Map (60%) -->
+        <div class="map-section" id="map-section">
+            <div id="map"></div>
+            
+            <!-- Map Controls Overlay -->
+            <div class="map-controls">
+                <div class="control-group">
+                    <button class="control-btn" id="heatmap-toggle" title="Toggle Crowd Heatmap">
+                        <i class="fas fa-fire"></i>
+                    </button>
+                    <button class="control-btn" id="route-type-toggle" title="Toggle Route Type">
+                        <i class="fas fa-route"></i>
+                    </button>
+                    <button class="control-btn" id="theme-toggle" title="Toggle Dark/Light Mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="control-btn" id="lang-toggle" title="Switch Language">
+                        <i class="fas fa-globe"></i>
+                    </button>
+                </div>
+                
+                <!-- Legend -->
+                <div class="legend-panel">
+                    <h4>Crowd Level</h4>
+                    <div class="legend-item">
+                        <span class="legend-color green"></span>
+                        <span>Not Busy (0-40%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color yellow"></span>
+                        <span>Moderate (40-70%)</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color red"></span>
+                        <span>Very Crowded (70-100%)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Weather Widget -->
+            <div class="weather-widget" id="weather-widget">
+                <i class="fas fa-cloud-sun"></i>
+                <span class="temp">12°C</span>
+                <span class="condition">Seoul</span>
+            </div>
+        </div>
+        
+        <!-- Right Side: AI Chat Interface (40%) -->
+        <div class="chat-section" id="chat-section">
+            <!-- Header -->
+            <div class="chat-header">
+                <div class="header-left">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-info">
+                        <h3>TripAI Assistant</h3>
+                        <p class="status">Online • Ready to help</p>
+                    </div>
+                </div>
+                
+                <div class="header-right">
+                    <div class="carbon-points-badge">
+                        <i class="fas fa-leaf"></i>
+                        <span class="points" id="carbon-points">+187</span>
+                        <span class="label">Carbon Points</span>
+                    </div>
+                    
+                    <div class="user-profile">
+                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='50' fill='%239D4EDD'/%3E%3Ctext x='50' y='60' font-size='40' text-anchor='middle' fill='white'%3E👤%3C/text%3E%3C/svg%3E" alt="User" class="profile-pic">
+                    </div>
+                    
+                    <button class="notification-btn" id="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-dot"></span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chat-messages">
+                <!-- Welcome Message -->
+                <div class="message ai-message">
+                    <div class="message-content">
+                        <p>Hello! 👋 I'm your AI trip planning assistant for Korea. I'll help you create the perfect itinerary with real-time crowd tracking and carbon point rewards!</p>
+                        <p>I've prepared a sample Seoul itinerary for you. You can modify, remove, or book any suggestions below.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Budget Slider -->
+            <div class="budget-section">
+                <div class="budget-header">
+                    <label for="budget-slider"><i class="fas fa-wallet"></i> Daily Budget</label>
+                    <span class="budget-value" id="budget-value">₩250,000</span>
+                </div>
+                <input type="range" id="budget-slider" min="50000" max="500000" step="10000" value="250000">
+                <div class="budget-range">
+                    <span>₩50K</span>
+                    <span>₩500K</span>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="action-btn" id="export-pdf" title="Export as PDF">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>Export PDF</span>
+                </button>
+                <button class="action-btn" id="share-trip" title="Share Itinerary">
+                    <i class="fas fa-share-alt"></i>
+                    <span>Share</span>
+                </button>
+            </div>
+            
+            <!-- Search Input -->
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Where to next?" autocomplete="off">
+                <button class="send-btn" id="send-btn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Modal -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Item Details</h3>
+                <button class="close-btn" id="close-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <div class="form-group">
+                        <label for="edit-date">Date</label>
+                        <input type="date" id="edit-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-time">Time</label>
+                        <input type="time" id="edit-time">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-duration">Duration (hours)</label>
+                        <input type="number" id="edit-duration" min="1" max="12">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-notes">Notes</label>
+                        <textarea id="edit-notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancel-edit">Cancel</button>
+                <button class="btn-primary" id="save-edit">Save Changes</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Panel -->
+    <div class="notification-panel" id="notification-panel">
+        <div class="notification-header">
+            <h4>Notifications</h4>
+            <button class="clear-btn" id="clear-notifications">Clear All</button>
+        </div>
+        <div class="notification-list" id="notification-list">
+            <!-- Notifications will be added here dynamically -->
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="mock-data.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
